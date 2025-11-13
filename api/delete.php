@@ -1,5 +1,11 @@
 <?php
-require_once("db.php");
+/**
+ * Delete Todo API Endpoint
+ * 
+ * Handles POST requests to delete todos
+ */
+
+require_once __DIR__ . '/../includes/db.php';
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     send_json(['success' => false, 'message' => 'Method not allowed'], 405);
@@ -22,11 +28,15 @@ try {
             send_json(['success' => false, 'message' => 'Task not found'], 404);
         }
     } else {
-        throw new Exception("Failed to delete task");
+        throw new Exception("Failed to delete task: " . $stmt->error);
     }
+    
+    $stmt->close();
     
 } catch (Exception $e) {
     error_log($e->getMessage());
     send_json(['success' => false, 'message' => 'Failed to delete task'], 500);
 }
-?>
+
+$conn->close();
+

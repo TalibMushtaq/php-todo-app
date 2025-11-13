@@ -1,9 +1,25 @@
 <?php
-require_once("db.php");
+/**
+ * Get Todos API Endpoint
+ * 
+ * Handles GET requests to retrieve todos with filtering and sorting
+ */
+
+require_once __DIR__ . '/../includes/db.php';
 
 // Get filter parameters
 $filter = $_GET['filter'] ?? 'all'; // all, active, completed
 $sort = $_GET['sort'] ?? 'created'; // created, priority, task
+
+// Validate filter
+if (!in_array($filter, ['all', 'active', 'completed'])) {
+    $filter = 'all';
+}
+
+// Validate sort
+if (!in_array($sort, ['created', 'priority', 'task'])) {
+    $sort = 'created';
+}
 
 // Build query based on filter
 $where_clause = "";
@@ -31,6 +47,11 @@ try {
               FROM todos $where_clause $order_clause";
     
     $result = $conn->query($query);
+    
+    if (!$result) {
+        throw new Exception("Query failed: " . $conn->error);
+    }
+    
     $todos = [];
     
     while ($row = $result->fetch_assoc()) {
@@ -54,4 +75,6 @@ try {
     error_log($e->getMessage());
     send_json(['success' => false, 'message' => 'Failed to fetch tasks'], 500);
 }
-?>
+
+$conn->close();
+

@@ -1,5 +1,11 @@
 <?php
-require_once("db.php");
+/**
+ * Update Todo API Endpoint
+ * 
+ * Handles POST requests to update todos (status, task text, or priority)
+ */
+
+require_once __DIR__ . '/../includes/db.php';
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     send_json(['success' => false, 'message' => 'Method not allowed'], 405);
@@ -16,6 +22,7 @@ try {
     if (isset($_POST["done"])) {
         // Toggle done status
         $done = intval($_POST["done"]);
+        $done = $done ? 1 : 0; // Ensure boolean
         $stmt = $conn->prepare("UPDATE todos SET is_done=?, updated_at=NOW() WHERE id=?");
         $stmt->bind_param("ii", $done, $id);
         
@@ -42,14 +49,22 @@ try {
         send_json(['success' => false, 'message' => 'No update data provided'], 400);
     }
     
-    if ($stmt->execute() && $stmt->affected_rows > 0) {
-        send_json(['success' => true, 'message' => 'Task updated']);
+    if ($stmt->execute()) {
+        if ($stmt->affected_rows > 0) {
+            send_json(['success' => true, 'message' => 'Task updated']);
+        } else {
+            send_json(['success' => false, 'message' => 'Task not found or no changes made'], 404);
+        }
     } else {
-        send_json(['success' => false, 'message' => 'Task not found or no changes made'], 404);
+        throw new Exception("Update failed: " . $stmt->error);
     }
+    
+    $stmt->close();
     
 } catch (Exception $e) {
     error_log($e->getMessage());
     send_json(['success' => false, 'message' => 'Failed to update task'], 500);
 }
-?>
+
+$conn->close();
+

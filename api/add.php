@@ -1,5 +1,11 @@
 <?php
-require_once("db.php");
+/**
+ * Add Todo API Endpoint
+ * 
+ * Handles POST requests to add new todos
+ */
+
+require_once __DIR__ . '/../includes/db.php';
 
 // Only accept POST requests
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
@@ -18,7 +24,7 @@ if (strlen($task) > 500) {
 }
 
 // Get optional priority
-$priority = isset($_POST["priority"]) ? intval($_POST["priority"]) : 0;
+$priority = isset($_POST["priority"]) ? intval($_POST["priority"]) : 1;
 $priority = max(0, min(2, $priority)); // Clamp between 0-2
 
 // Insert task
@@ -38,8 +44,12 @@ try {
     } else {
         throw new Exception("Failed to insert task");
     }
+    
+    $stmt->close();
 } catch (Exception $e) {
     error_log($e->getMessage());
     send_json(['success' => false, 'message' => 'Failed to add task'], 500);
 }
-?>
+
+$conn->close();
+
